@@ -2,7 +2,7 @@ version: '2'
 
 services:
     detect_yolo:
-        image: detect-coco
+        image: detect-yolo
         build: .
         volumes:
             - .:/srv/app
@@ -12,7 +12,7 @@ services:
         tty: true
 
     download_weights:
-        image: detect-coco
+        image: detect-yolo
         build: .
         volumes:
             - .:/srv/app
@@ -23,7 +23,7 @@ services:
         tty: true
 
     download_dataset:
-        image: detect-coco
+        image: detect-yolo
         build: .
         volumes:
             - .:/srv/app
