@@ -1,0 +1,34 @@
+version: '2'
+
+services:
+    detect_yolo:
+        image: detect-coco
+        build: .
+        volumes:
+            - .:/srv/app
+            - ${OUTPUT_DIR}:/output
+        entrypoint: ["python3.6", "detect.py"]
+        stdin_open: true
+        tty: true
+
+    download_weights:
+        image: detect-coco
+        build: .
+        volumes:
+            - .:/srv/app
+            - ${OUTPUT_DIR}:/output
+        working_dir: /srv/app/weights
+        entrypoint: ["bash", "download_weights.sh"]
+        stdin_open: true
+        tty: true
+
+    download_dataset:
+        image: detect-coco
+        build: .
+        volumes:
+            - .:/srv/app
+            - ${OUTPUT_DIR}:/output
+        working_dir: /srv/app/data
+        entrypoint: ["bash", "get_coco_dataset.sh"]
+        stdin_open: true
+        tty: true
