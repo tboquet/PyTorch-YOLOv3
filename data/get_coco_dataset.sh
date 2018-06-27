@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # CREDIT: https://github.com/pjreddie/darknet/tree/master/scripts/get_coco_dataset.sh
+cp /srv/app/data/coco.names /data/coco.names
+cp -R /srv/app/data/samples /data/samples
 
+cd /data
 # Clone COCO API
 git clone https://github.com/pdollar/coco
 cd coco

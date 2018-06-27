@@ -12,6 +12,7 @@ matplotlib.use('PDF')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+
 def load_classes(path):
     """
     Loads class labels at 'path'
@@ -20,6 +21,7 @@ def load_classes(path):
     names = fp.read().split("\n")[:-1]
     return names
 
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -27,6 +29,7 @@ def weights_init_normal(m):
     elif classname.find('BatchNorm2d') != -1:
         torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
         torch.nn.init.constant_(m.bias.data, 0.0)
+
 
 def compute_ap(recall, precision):
     """ Compute the average precision, given the recall and precision curves.
@@ -54,6 +57,7 @@ def compute_ap(recall, precision):
     # and sum (\Delta recall) * prec
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap
+
 
 def bbox_iou(box1, box2, x1y1x2y2=True):
     """

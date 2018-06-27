@@ -8,12 +8,13 @@ import numpy as np
 
 from PIL import Image
 
-from utils.parse_config import *
-from utils.utils import build_targets
+from .utils.parse_config import *
+from .utils.utils import build_targets
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
 
 def create_modules(module_defs):
     """
@@ -72,10 +73,12 @@ def create_modules(module_defs):
 
     return hyperparams, module_list
 
+
 class EmptyLayer(nn.Module):
     """Placeholder for 'route' and 'shortcut' layers"""
     def __init__(self):
         super(EmptyLayer, self).__init__()
+
 
 class YOLOLayer(nn.Module):
     """Detection layer"""
@@ -214,7 +217,6 @@ class Darknet(nn.Module):
 
         self.losses['recall'] /= 3
         return sum(output) if is_training else torch.cat(output, 1)
-
 
     def load_weights(self, weights_path):
         """Parses and loads the weights stored in 'weights_path'"""

@@ -34,9 +34,17 @@ RUN conda install -y \
 RUN pip install h5py-cache
 
 # YOLO specific parts
-
 COPY . /srv/app
 WORKDIR /srv/app
 
+RUN mkdir /data && mkdir /config && mkdir /config/weights && \
+    mkdir /output
+
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 RUN cd /srv/app && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt && \
+    python setup.py install
+
+RUN yolov3 --help

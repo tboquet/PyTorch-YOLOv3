@@ -1,33 +1,49 @@
 version: '2'
 
 services:
-    detect_yolo:
-        image: detect-yolo
+    train_yolo:
+        image: pytorch-yolov3
         build: .
         volumes:
             - .:/srv/app
             - ${OUTPUT_DIR}:/output
-        entrypoint: ["python3.6", "detect.py"]
+            - ${DATA_DIR}:/data
+            - ${WEIGHTS_PATH}:/weights
+            - ${CONFIG_PATH}:/config
+        entrypoint: ["yolov3", "train"]
+        stdin_open: true
+        tty: true
+
+    detect_yolo:
+        image: pytorch-yolov3
+        build: .
+        volumes:
+            - .:/srv/app
+            - ${OUTPUT_DIR}:/output
+            - ${DATA_DIR}:/data
+            - ${WEIGHTS_PATH}:/weights
+            - ${CONFIG_PATH}:/config
+        entrypoint: ["yolov3", "predict"]
         stdin_open: true
         tty: true
 
     download_weights:
-        image: detect-yolo
+        image: pytorch-yolov3
         build: .
         volumes:
             - .:/srv/app
-            - ${OUTPUT_DIR}:/output
+            - ${WEIGHTS_PATH}:/weights
         working_dir: /srv/app/weights
         entrypoint: ["bash", "download_weights.sh"]
         stdin_open: true
         tty: true
 
     download_dataset:
-        image: detect-yolo
+        image: pytorch-yolov3
         build: .
         volumes:
             - .:/srv/app
-            - ${OUTPUT_DIR}:/output
+            - ${DATA_DIR}:/data
         working_dir: /srv/app/data
         entrypoint: ["bash", "get_coco_dataset.sh"]
         stdin_open: true
