@@ -19,7 +19,7 @@ import click
 from . import __version__
 from .detect import predict as predict_yolo
 from .detect import plot_detection
-# from .train import build_pipeline
+from .train import train as train_yolo
 # from .train import get_callbacks
 
 
@@ -80,64 +80,69 @@ def predict(conf_thres, nms_thres, batch_size, n_cpu, img_size, use_cuda, plot,
         plot_detection(imgs, img_detections, img_size, class_path, output_path)
 
 
-# @cli.command('train')
-# @click.option('--verbose', is_flag=True)
-# @click.option('--batch_size', type=click.INT, required=True, default=32)
-# @click.option('--lr', type=click.FLOAT, required=True, default=1e-4)
-# @click.option('--architecture', required=True, default='inceptionv3')
-# @click.option('--nb_workers', required=True, default=3)
-# @click.option('--nb_epochs', required=True, default=20)
-# @click.option('--augmentation', is_flag=True)
-# @click.argument(
-#     'train_dataset_path', type=click.Path(exists=True), required=True)
-# @click.argument(
-#     'valid_dataset_path', type=click.Path(exists=True), required=True)
-# @click.argument('output_path', type=click.Path(exists=False), required=True)
-# def train(verbose, batch_size, lr, architecture, nb_workers, nb_epochs,
-#           augmentation, train_dataset_path, valid_dataset_path, output_path):
-#     verbose_keras = 0
-#     pipeline = build_pipeline(train_dataset_path, valid_dataset_path,
-#                               batch_size, architecture, augmentation, lr)
-#     train_generator = pipeline.module_pipeline['train_generator']
-#     valid_generator = pipeline.module_pipeline['valid_generator']
-#     nb_iter = int(train_generator.examples / train_generator.batch_size + 1)
-#     nb_iter_valid = int(valid_generator.examples / valid_generator.batch_size +
-#                         1)
-#     if verbose is True:
-#         verbose_keras = 1
-#         click.secho('Parameters:', color='green')
-#         click.secho('\tBatch_size: {}'.format(batch_size), color='blue')
-#         click.secho('\tLearning rate: {}'.format(lr), color='blue')
-#         click.secho('\tnb epochs: {}'.format(nb_epochs), color='blue')
-#         click.secho('\tArchitecture: {}'.format(architecture), color='blue')
-#         click.secho(
-#             '\tNumber of train examples: {}'.format(train_generator.examples),
-#             color='blue')
-#         click.secho(
-#             '\tNumber of valid examples: {}'.format(valid_generator.examples),
-#             color='blue')
-#         click.secho(
-#             '\tNumber of train iterations: {}'.format(nb_iter), color='blue')
-#         click.secho(
-#             '\tNumber of valid iterations: {}'.format(nb_iter_valid),
-#             color='blue')
-#         click.secho('\tNumber of workers: {}'.format(nb_workers), color='blue')
-
-#     splitted_path = output_path.split('.')
-#     splitted_path[-2] = '_'.join([
-#         splitted_path[-2], str(batch_size), str(lr), str(nb_epochs),
-#         architecture
-#     ])
-#     splitted_path[-1] = '.h5'
-#     path = ''.join(splitted_path)
-#     ls_sched, early_stop, checkpoint = get_callbacks(
-#         path, verbose=verbose_keras)
-#     cbks = [ls_sched, early_stop, checkpoint]
-#     pipeline.fit(
-#         gen=train_generator,
-#         validation_data=valid_generator,
-#         verbose=verbose_keras,
-#         use_multiprocessing=True,
-#         workers=nb_workers,
-#         epochs=nb_epochs,
-#         callbacks=cbks)
+@cli.command('train')
+@click.option('--nb_epochs', type=int, default=30, help='number of epochs')
+@click.option(
+    '--batch_size', type=int, default=16, help='size of each image batch')
+@click.option(
+    '--conf_thres',
+    type=float,
+    default=0.8,
+    help='object confidence threshold')
+@click.option(
+    '--nms_thres',
+    type=float,
+    default=0.4,
+    help='iou thresshold for non-maximum suppression')
+@click.option(
+    '--n_cpu',
+    type=int,
+    default=0,
+    help='number of cpu threads to use during batch generation')
+@click.option(
+    '--img_size', type=int, default=416, help='size of each image dimension')
+@click.option(
+    '--checkpoint_interval',
+    type=int,
+    default=1,
+    help='interval between saving model weights')
+@click.option(
+    '--use_cuda',
+    type=bool,
+    is_flag=True,
+    help='whether to use cuda if available')
+@click.option(
+    '--verbose', type=bool, help='Output training information', is_flag=True)
+@click.argument('input_path', type=str, default='/data/samples')
+@click.argument('model_config_path', type=str, default='/config/yolov3.cfg')
+@click.argument('data_config_path', type=str, default='/config/coco.data')
+@click.argument('weights_path', type=str, default='')
+@click.argument('checkpoint_dir', type=str, default='/checkpoints')
+def train(input_path, model_config_path, data_config_path, weights_path,
+          checkpoint_dir, nb_epochs, batch_size, conf_thres, nms_thres, n_cpu,
+          img_size, checkpoint_interval, use_cuda, verbose):
+    if weights_path == '':
+        weights_path = None
+    if verbose is True:
+        click.secho('Parameters:', color='green')
+        click.secho('\tBatch_size: {}'.format(batch_size), color='blue')
+        click.secho('\tnb epochs: {}'.format(nb_epochs), color='blue')
+        click.secho(
+            '\t Non maximum supression: {}'.format(nms_thres), color='blue')
+        click.secho(
+            '\t Confidence treshold: {}'.format(conf_thres), color='blue')
+    train_yolo(
+        input_path=input_path,
+        model_config_path=model_config_path,
+        data_config_path=data_config_path,
+        weights_path=weights_path,
+        nb_epochs=nb_epochs,
+        batch_size=batch_size,
+        conf_thres=conf_thres,
+        nms_thres=nms_thres,
+        n_cpu=n_cpu,
+        img_size=img_size,
+        checkpoint_interval=checkpoint_interval,
+        checkpoint_dir=checkpoint_dir,
+        use_cuda=use_cuda,
+        verbose=verbose)

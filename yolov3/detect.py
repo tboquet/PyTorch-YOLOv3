@@ -14,7 +14,6 @@ import random
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
-from torchvision import datasets
 from torch.autograd import Variable
 import matplotlib
 matplotlib.use('PDF')

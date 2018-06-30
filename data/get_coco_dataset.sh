@@ -3,6 +3,7 @@
 # CREDIT: https://github.com/pjreddie/darknet/tree/master/scripts/get_coco_dataset.sh
 cp /srv/app/data/coco.names /data/coco.names
 cp -R /srv/app/data/samples /data/samples
+cp /srv/app/config/coco.data /config/coco.data
 
 cd /data
 # Clone COCO API
@@ -33,3 +34,8 @@ unzip -q instances_train-val2014.zip
 # Set Up Image Lists
 paste <(awk "{print \"$PWD\"}" <5k.part) 5k.part | tr -d '\t' > 5k.txt
 paste <(awk "{print \"$PWD\"}" <trainvalno5k.part) trainvalno5k.part | tr -d '\t' > trainvalno5k.txt
+
+mkdir /data/train
+
+mv /data/coco/images/train2014 /data/train/images
+mv /data/coco/labels/train2014 /data/train/labels

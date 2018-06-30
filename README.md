@@ -30,18 +30,22 @@ https://pjreddie.com/yolo/.
 
 [[Paper]](https://pjreddie.com/media/files/papers/YOLOv3.pdf) [[Original Implementation]](https://github.com/pjreddie/darknet)
 
-## Installation
-    $ git clone https://github.com/eriklindernoren/PyTorch-YOLOv3
-    $ cd PyTorch-YOLOv3/
-    $ sudo pip3 install -r requirements.txt
+## Usage
+First copy the configuration:
+
+    $ cp docker/conf.env.dist docker/conf.env
+    
+Modify the environment variable to point to the right directories on your local machine.
+You can then build and run the services:
+
+    $ docker-compose build
+    $ docker-compose run yolov3 --help
 
 ##### Download pretrained weights
-    $ cd weights/
-    $ bash download_weights.sh
+    $ docker-compose run download_weights
 
 ##### Download COCO
-    $ cd data/
-    $ bash get_coco_dataset.sh
+    $ docker-compose run download_coco
 
 ## Inference
 Uses pretrained weights to make predictions on images. Below table displays the inference times when using as inputs images scaled to 256x256. The ResNet backbone measurements are taken from the YOLOv3 paper. The Darknet-53 measurement marked shows the inference time of this implementation on my 1080ti card.
@@ -53,7 +57,20 @@ Uses pretrained weights to make predictions on images. Below table displays the 
 | Darknet-53 (paper)      | Titan X  | 76       |
 | Darknet-53 (this impl.) | 1080ti   | 74       |
 
-    $ python3 detect.py --image_folder /data/samples
+```
+Usage: yolov3 predict [OPTIONS] [INPUT_PATH] [OUTPUT_PATH] [CONFIG_PATH]
+                      [WEIGHTS_PATH] [CLASS_PATH]
+
+Options:
+  --conf_thres FLOAT    object confidence threshold
+  --nms_thres FLOAT     iou thresshold for non-maximum suppression
+  --batch_size INTEGER  size of the batches
+  --n_cpu INTEGER       number of cpu threads to use during batch generation
+  --img_size INTEGER    size of each image dimension
+  --use_cuda            whether to use cuda if available
+  --plot                output images with bounding boxes
+  --help                Show this message and exit.
+```
 
 <p align="center"><img src="assets/giraffe.png" width="480"\></p>
 <p align="center"><img src="assets/dog.png" width="480"\></p>
@@ -63,25 +80,32 @@ Uses pretrained weights to make predictions on images. Below table displays the 
 ## Test
 Evaluates the model on COCO test.
 
-    $ python3 test.py --weights_path weights/yolov3.weights
-
 | Model                   | mAP (min. 50 IoU) |
 | ----------------------- |:----------------:|
 | YOLOv3 (paper)          | 57.9             |
 | YOLOv3 (this impl.)     | 58.2             |
 
+
+TODO: docker-compose service to test
+
 ## Train
 Model does not converge yet during training. Data augmentation as well as additional training tricks remains to be implemented. PRs are welcomed!
 ```
-    train.py [-h] [--epochs EPOCHS] [--image_folder IMAGE_FOLDER]
-                [--batch_size BATCH_SIZE]
-                [--model_config_path MODEL_CONFIG_PATH]
-                [--data_config_path DATA_CONFIG_PATH]
-                [--weights_path WEIGHTS_PATH] [--class_path CLASS_PATH]
-                [--conf_thres CONF_THRES] [--nms_thres NMS_THRES]
-                [--n_cpu N_CPU] [--img_size IMG_SIZE]
-                [--checkpoint_interval CHECKPOINT_INTERVAL]
-                [--checkpoint_dir CHECKPOINT_DIR]
+Usage: yolov3 train [OPTIONS] [INPUT_PATH] [MODEL_CONFIG_PATH]
+                    [DATA_CONFIG_PATH] [WEIGHTS_PATH] [CHECKPOINT_DIR]
+
+Options:
+  --nb_epochs INTEGER            number of epochs
+  --batch_size INTEGER           size of each image batch
+  --conf_thres FLOAT             object confidence threshold
+  --nms_thres FLOAT              iou thresshold for non-maximum suppression
+  --n_cpu INTEGER                number of cpu threads to use during batch
+                                 generation
+  --img_size INTEGER             size of each image dimension
+  --checkpoint_interval INTEGER  interval between saving model weights
+  --use_cuda                     whether to use cuda if available
+  --verbose                      Output training information
+  --help                         Show this message and exit.
 ```
 
 ## Credit
