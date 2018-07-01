@@ -86,7 +86,21 @@ Evaluates the model on COCO test.
 | YOLOv3 (this impl.)     | 58.2             |
 
 
-TODO: docker-compose service to test
+```
+Usage: yolov3 test [OPTIONS] [MODEL_CONFIG_PATH] [DATA_CONFIG_PATH]
+                   [WEIGHTS_PATH]
+
+Options:
+  --batch_size INTEGER  size of each image batch
+  --iou_thres FLOAT     Iou thresshold for non-maximum suppression
+  --conf_thres FLOAT    object confidence threshold
+  --nms_thres FLOAT     Nms thresshold for non-maximum suppression
+  --n_cpu INTEGER       number of cpu threads to use during batch generation
+  --img_size INTEGER    size of each image dimension
+  --use_cuda            whether to use cuda if available
+  --verbose             Output training information
+  --help                Show this message and exit.
+```
 
 ## Train
 Model does not converge yet during training. Data augmentation as well as additional training tricks remains to be implemented. PRs are welcomed!
