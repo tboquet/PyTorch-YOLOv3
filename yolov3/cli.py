@@ -19,8 +19,8 @@ import click
 from . import __version__
 from .detect import predict as predict_yolo
 from .detect import plot_detection
+from .test import test as test_yolo
 from .train import train as train_yolo
-# from .train import get_callbacks
 
 
 @click.group()
@@ -38,7 +38,7 @@ def cli():
     '--nms_thres',
     type=click.FLOAT,
     default=0.4,
-    help='iou thresshold for non-maximum suppression')
+    help='Nms thresshold for non-maximum suppression')
 @click.option('--batch_size', type=int, default=1, help='size of the batches')
 @click.option(
     '--n_cpu',
@@ -93,7 +93,7 @@ def predict(conf_thres, nms_thres, batch_size, n_cpu, img_size, use_cuda, plot,
     '--nms_thres',
     type=float,
     default=0.4,
-    help='iou thresshold for non-maximum suppression')
+    help='nms thresshold for non-maximum suppression')
 @click.option(
     '--n_cpu',
     type=int,
@@ -128,9 +128,9 @@ def train(input_path, model_config_path, data_config_path, weights_path,
         click.secho('\tBatch_size: {}'.format(batch_size), color='blue')
         click.secho('\tnb epochs: {}'.format(nb_epochs), color='blue')
         click.secho(
-            '\t Non maximum supression: {}'.format(nms_thres), color='blue')
+            '\tNon maximum supression: {}'.format(nms_thres), color='blue')
         click.secho(
-            '\t Confidence treshold: {}'.format(conf_thres), color='blue')
+            '\tConfidence treshold: {}'.format(conf_thres), color='blue')
     train_yolo(
         input_path=input_path,
         model_config_path=model_config_path,
@@ -144,5 +144,63 @@ def train(input_path, model_config_path, data_config_path, weights_path,
         img_size=img_size,
         checkpoint_interval=checkpoint_interval,
         checkpoint_dir=checkpoint_dir,
+        use_cuda=use_cuda,
+        verbose=verbose)
+
+
+@cli.command('test')
+@click.option(
+    '--batch_size', type=int, default=16, help='size of each image batch')
+@click.option(
+    '--iou_thres',
+    type=float,
+    default=0.5,
+    help='Iou thresshold for non-maximum suppression')
+@click.option(
+    '--conf_thres',
+    type=float,
+    default=0.5,
+    help='object confidence threshold')
+@click.option(
+    '--nms_thres',
+    type=float,
+    default=0.5,
+    help='Nms thresshold for non-maximum suppression')
+@click.option(
+    '--n_cpu',
+    type=int,
+    default=0,
+    help='number of cpu threads to use during batch generation')
+@click.option(
+    '--img_size', type=int, default=416, help='size of each image dimension')
+@click.option(
+    '--use_cuda',
+    type=bool,
+    is_flag=True,
+    help='whether to use cuda if available')
+@click.option(
+    '--verbose', type=bool, help='Output training information', is_flag=True)
+@click.argument('model_config_path', type=str, default='/config/yolov3.cfg')
+@click.argument('data_config_path', type=str, default='/config/coco.data')
+@click.argument('weights_path', type=str, default='')
+def test(model_config_path, data_config_path, weights_path, batch_size,
+         iou_thres, conf_thres, nms_thres, n_cpu, img_size, use_cuda, verbose):
+    if verbose is True:
+        click.secho('Parameters:', color='green')
+        click.secho('\tBatch_size: {}'.format(batch_size), color='blue')
+        click.secho(
+            '\tNon maximum supression: {}'.format(nms_thres), color='blue')
+        click.secho(
+            '\tConfidence treshold: {}'.format(conf_thres), color='blue')
+    mean_aps = test_yolo(
+        model_config_path=model_config_path,
+        data_config_path=data_config_path,
+        weights_path=weights_path,
+        batch_size=batch_size,
+        iou_thres=iou_thres,
+        conf_thres=conf_thres,
+        nms_thres=nms_thres,
+        n_cpu=n_cpu,
+        img_size=img_size,
         use_cuda=use_cuda,
         verbose=verbose)
