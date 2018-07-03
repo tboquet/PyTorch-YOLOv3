@@ -25,7 +25,8 @@ from .train import train as train_yolo
 
 @click.group()
 def cli():
-    click.secho('yolov3 version: {}'.format(__version__), bold=True)
+    click.secho(
+        'yolov3 version: {}'.format(__version__), bold=True, color='blue')
 
 
 @cli.command('predict')
@@ -112,6 +113,11 @@ def predict(conf_thres, nms_thres, batch_size, n_cpu, img_size, use_cuda, plot,
     is_flag=True,
     help='whether to use cuda if available')
 @click.option(
+    '--freeze',
+    type=bool,
+    is_flag=True,
+    help='Freeze the network but the last layer')
+@click.option(
     '--verbose', type=bool, help='Output training information', is_flag=True)
 @click.argument('input_path', type=str, default='/data/samples')
 @click.argument('model_config_path', type=str, default='/config/yolov3.cfg')
@@ -120,17 +126,21 @@ def predict(conf_thres, nms_thres, batch_size, n_cpu, img_size, use_cuda, plot,
 @click.argument('checkpoint_dir', type=str, default='/checkpoints')
 def train(input_path, model_config_path, data_config_path, weights_path,
           checkpoint_dir, nb_epochs, batch_size, conf_thres, nms_thres, n_cpu,
-          img_size, checkpoint_interval, use_cuda, verbose):
+          img_size, checkpoint_interval, use_cuda, freeze, verbose):
     if weights_path == '':
         weights_path = None
+    if weights_path is None and freeze is True:
+        raise ValueError('You should provide weights from a pretrained model'
+                         ' when you freeze the network')
     if verbose is True:
         click.secho('Parameters:', color='green')
         click.secho('\tBatch_size: {}'.format(batch_size), color='blue')
-        click.secho('\tnb epochs: {}'.format(nb_epochs), color='blue')
+        click.secho('\tNb epochs: {}'.format(nb_epochs), color='blue')
         click.secho(
             '\tNon maximum supression: {}'.format(nms_thres), color='blue')
         click.secho(
             '\tConfidence treshold: {}'.format(conf_thres), color='blue')
+        click.secho('\tFreeze: {}'.format(freeze), color='blue')
     train_yolo(
         input_path=input_path,
         model_config_path=model_config_path,
@@ -145,7 +155,8 @@ def train(input_path, model_config_path, data_config_path, weights_path,
         checkpoint_interval=checkpoint_interval,
         checkpoint_dir=checkpoint_dir,
         use_cuda=use_cuda,
-        verbose=verbose)
+        verbose=verbose,
+        freeze=freeze)
 
 
 @cli.command('test')

@@ -1,10 +1,10 @@
 from __future__ import division
+
+import os
+from datetime import datetime
 import math
-import time
+import errno
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
 import numpy as np
 import matplotlib
 matplotlib.use('PDF')
@@ -71,14 +71,18 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
         b2_y1, b2_y2 = box2[:, 1] - box2[:, 3] / 2, box2[:, 1] + box2[:, 3] / 2
     else:
         # Get the coordinates of bounding boxes
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1[:,0], box1[:,1], box1[:,2], box1[:,3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[:,0], box2[:,1], box2[:,2], box2[:,3]
+        b1_x1, b1_y1, b1_x2, b1_y2 = box1[:, 0], box1[:, 1], box1[:,
+                                                                  2], box1[:,
+                                                                           3]
+        b2_x1, b2_y1, b2_x2, b2_y2 = box2[:, 0], box2[:, 1], box2[:,
+                                                                  2], box2[:,
+                                                                           3]
 
     # get the corrdinates of the intersection rectangle
-    inter_rect_x1 =  torch.max(b1_x1, b2_x1)
-    inter_rect_y1 =  torch.max(b1_y1, b2_y1)
-    inter_rect_x2 =  torch.min(b1_x2, b2_x2)
-    inter_rect_y2 =  torch.min(b1_y2, b2_y2)
+    inter_rect_x1 = torch.max(b1_x1, b2_x1)
+    inter_rect_y1 = torch.max(b1_y1, b2_y1)
+    inter_rect_x2 = torch.min(b1_x2, b2_x2)
+    inter_rect_y2 = torch.min(b1_y2, b2_y2)
     # Intersection area
     inter_area =    torch.clamp(inter_rect_x2 - inter_rect_x1 + 1, min=0) * \
                     torch.clamp(inter_rect_y2 - inter_rect_y1 + 1, min=0)
@@ -91,7 +95,8 @@ def bbox_iou(box1, box2, x1y1x2y2=True):
     return iou
 
 
-def non_max_suppression(prediction, num_classes, conf_thres=0.5, nms_thres=0.4):
+def non_max_suppression(prediction, num_classes, conf_thres=0.5,
+                        nms_thres=0.4):
     """
     Removes detections with lower object confidence score than 'conf_thres' and performs
     Non-Maximum Suppression to further filter detections.
@@ -116,9 +121,11 @@ def non_max_suppression(prediction, num_classes, conf_thres=0.5, nms_thres=0.4):
         if not image_pred.size(0):
             continue
         # Get score and class with highest confidence
-        class_conf, class_pred = torch.max(image_pred[:, 5:5 + num_classes], 1,  keepdim=True)
+        class_conf, class_pred = torch.max(
+            image_pred[:, 5:5 + num_classes], 1, keepdim=True)
         # Detections ordered as (x1, y1, x2, y2, obj_conf, class_conf, class_pred)
-        detections = torch.cat((image_pred[:, :5], class_conf.float(), class_pred.float()), 1)
+        detections = torch.cat(
+            (image_pred[:, :5], class_conf.float(), class_pred.float()), 1)
         # Iterate through all predicted classes
         unique_labels = detections[:, -1].cpu().unique()
         if prediction.is_cuda:
@@ -127,7 +134,8 @@ def non_max_suppression(prediction, num_classes, conf_thres=0.5, nms_thres=0.4):
             # Get the detections with the particular class
             detections_class = detections[detections[:, -1] == c]
             # Sort the detections by maximum objectness confidence
-            _, conf_sort_index = torch.sort(detections_class[:, 4], descending=True)
+            _, conf_sort_index = torch.sort(
+                detections_class[:, 4], descending=True)
             detections_class = detections_class[conf_sort_index]
             # Perform non-maximum suppression
             max_detections = []
@@ -144,23 +152,27 @@ def non_max_suppression(prediction, num_classes, conf_thres=0.5, nms_thres=0.4):
 
             max_detections = torch.cat(max_detections).data
             # Add max detections to outputs
-            output[image_i] = max_detections if output[image_i] is None else torch.cat((output[image_i], max_detections))
+            output[image_i] = max_detections if output[
+                image_i] is None else torch.cat(
+                    (output[image_i], max_detections))
 
     return output
 
-def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, dim, ignore_thres, img_dim):
+
+def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, dim,
+                  ignore_thres, img_dim):
     nB = target.size(0)
     nA = num_anchors
     nC = num_classes
     dim = dim
-    mask        = torch.zeros(nB, nA, dim, dim)
-    conf_mask   = torch.ones(nB, nA, dim, dim)
-    tx          = torch.zeros(nB, nA, dim, dim)
-    ty          = torch.zeros(nB, nA, dim, dim)
-    tw          = torch.zeros(nB, nA, dim, dim)
-    th          = torch.zeros(nB, nA, dim, dim)
-    tconf       = torch.zeros(nB, nA, dim, dim)
-    tcls        = torch.zeros(nB, nA, dim, dim, num_classes)
+    mask = torch.zeros(nB, nA, dim, dim)
+    conf_mask = torch.ones(nB, nA, dim, dim)
+    tx = torch.zeros(nB, nA, dim, dim)
+    ty = torch.zeros(nB, nA, dim, dim)
+    tw = torch.zeros(nB, nA, dim, dim)
+    th = torch.zeros(nB, nA, dim, dim)
+    tconf = torch.zeros(nB, nA, dim, dim)
+    tcls = torch.zeros(nB, nA, dim, dim, num_classes)
 
     nGT = 0
     nCorrect = 0
@@ -180,7 +192,9 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, dim, ig
             # Get shape of gt box
             gt_box = torch.FloatTensor(np.array([0, 0, gw, gh])).unsqueeze(0)
             # Get shape of anchor box
-            anchor_shapes = torch.FloatTensor(np.concatenate((np.zeros((len(anchors), 2)), np.array(anchors)), 1))
+            anchor_shapes = torch.FloatTensor(
+                np.concatenate((np.zeros((len(anchors), 2)), np.array(anchors)
+                                ), 1))
             # Calculate iou between gt and anchor shapes
             anch_ious = bbox_iou(gt_box, anchor_shapes)
             # Where the overlap is larger than threshold set mask to zero (ignore)
@@ -198,8 +212,8 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, dim, ig
             tx[b, best_n, gj, gi] = gx - gi
             ty[b, best_n, gj, gi] = gy - gj
             # Width and height
-            tw[b, best_n, gj, gi] = math.log(gw/anchors[best_n][0] + 1e-16)
-            th[b, best_n, gj, gi] = math.log(gh/anchors[best_n][1] + 1e-16)
+            tw[b, best_n, gj, gi] = math.log(gw / anchors[best_n][0] + 1e-16)
+            th[b, best_n, gj, gi] = math.log(gh / anchors[best_n][1] + 1e-16)
             # One-hot encoding of label
             tcls[b, best_n, gj, gi, int(target[b, t, 0])] = 1
             # Calculate iou between ground truth and best matching prediction
@@ -211,6 +225,18 @@ def build_targets(pred_boxes, target, anchors, num_anchors, num_classes, dim, ig
 
     return nGT, nCorrect, mask, conf_mask, tx, ty, tw, th, tconf, tcls
 
+
 def to_categorical(y, num_classes):
     """ 1-hot encodes a tensor """
     return torch.from_numpy(np.eye(num_classes, dtype='uint8')[y])
+
+
+def create_dir(checkpoint_dir):
+    mydir = os.path.join(checkpoint_dir,
+                         datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    try:
+        os.makedirs(mydir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    return mydir
